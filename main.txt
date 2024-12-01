@@ -1,4 +1,4 @@
-1. Design a Lexical Analyzer in LEX to Recognize Patterns in C
+???????????????????????????????????????/1. Design a Lexical Analyzer in LEX to Recognize Patterns in C
 
 %{
 #include<stdio.h>
@@ -26,313 +26,290 @@ int yywrap() {
     return 1;
 }
 
-2. Calculator Using LEX and YACC
-
-LEX File (calc.l)
+????????????????????????????/2. Implement the lexical analyzer using  flex
 
 %{
-#include "y.tab.h"
+#include <stdio.h>
+#include <stdlib.h>
 %}
 
 %%
-[0-9]+          { yylval = atoi(yytext); return NUMBER; }
-"+"             { return PLUS; }
-"-"             { return MINUS; }
-"*"             { return MUL; }
-"/"             { return DIV; }
-"("             { return LPAREN; }
-")"             { return RPAREN; }
-\n              { return END; }
-[ \t]           { /* Ignore whitespace */ }
-.               { return yytext[0]; }
-%%
-
-YACC File (calc.y)
-
-%{
-#include<stdio.h>
-#include<stdlib.h>
-%}
-
-%token NUMBER
-%token PLUS MINUS MUL DIV
-%token LPAREN RPAREN
-%token END
-
-%%
-calculation: expr END { printf("Result: %d\n", $1); }
-           ;
-
-expr: expr PLUS term { $$ = $1 + $3; }
-    | expr MINUS term { $$ = $1 - $3; }
-    | term
-    ;
-
-term: term MUL factor { $$ = $1 * $3; }
-    | term DIV factor { $$ = $1 / $3; }
-    | factor
-    ;
-
-factor: NUMBER
-      | LPAREN expr RPAREN
-      ;
+int             { printf("Keyword: int\n"); }
+float           { printf("Keyword: float\n"); }
+if|else         { printf("Keyword: %s\n", yytext); }
+[a-zA-Z_][a-zA-Z0-9_]* { printf("Identifier: %s\n", yytext); }
+[0-9]+          { printf("Number: %s\n", yytext); }
+"+"|"-"|"*"|"/" { printf("Operator: %s\n", yytext); }
+";"             { printf("Semicolon\n"); }
+[ \t\n]+        { /* Ignore whitespace */ }
+"//".*          { /* Ignore single-line comments */ }
+"/\\*".*"\\*/"   { /* Ignore multi-line comments */ }
+.               { printf("Unknown character: %s\n", yytext); }
 %%
 
 int main() {
-    printf("Enter an expression:\n");
+    yylex();
+    return 0;
+}
+
+
+?????????????????????????????????????????3. Write a program to implement to recognize a valid arithmetic expression that uses operator +, – ,
+* and /.
+
+
+#include <stdio.h>
+#include <ctype.h>
+
+int main() {
+    char c;
+    int valid = 1;
+    while ((c = getchar()) != EOF) {
+        if (!(isdigit(c) || c == '+' || c == '-' || c == '*' || c == '/')) {
+            valid = 0;
+            break;
+        }
+    }
+    if (valid)
+        printf("Valid expression\n");
+    else
+        printf("Invalid expression\n");
+    return 0;
+}
+
+
+
+???????????????????????4. Write a program to implement a Calculator using LEX and YACC
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>LEX Program:
+
+lex
+Copy code
+%{
+#include <stdio.h>
+#include <stdlib.h>
+%}
+
+%%
+[0-9]+  { yylval = atoi(yytext); return NUMBER; }
+[+\-*/] { return yytext[0]; }
+\n      { return 0; }
+%%
+
+int yywrap() { return 1; }
+
+>>>>>>>>>>>>>>>>>>>>YACC Program:
+
+yacc
+Copy code
+%{
+#include <stdio.h>
+#include <stdlib.h>
+int yylex();
+void yyerror(char *s) { printf("Error: %s\n", s); }
+%}
+
+%token NUMBER
+
+%%
+
+calculation: expression { printf("Result = %d\n", $1); }
+           ;
+
+expression: NUMBER          { $$ = $1; }
+          | expression '+' NUMBER { $$ = $1 + $3; }
+          | expression '-' NUMBER { $$ = $1 - $3; }
+          | expression '*' NUMBER { $$ = $1 * $3; }
+          | expression '/' NUMBER { $$ = $1 / $3; }
+          ;
+
+%%
+
+int main() {
     yyparse();
     return 0;
 }
 
-int yyerror(char *s) {
-    printf("Error: %s\n", s);
-    return 0;
-}
 
+????????????????????????????????????????????5.Program to recognize a valid variable
 
-3. Recognize a Valid Variable Name
+>>>>>>>>>>>>>>>>>>>>>>>>..LEX Program:
 
+lex
+Copy code
 %{
-#include<stdio.h>
+#include <stdio.h>
 %}
 
 %%
-[a-zA-Z_][a-zA-Z0-9_]*  { printf("Valid Variable Name: %s\n", yytext); }
-[^a-zA-Z0-9_]           { printf("Invalid Variable Name: %s\n", yytext); }
+[a-zA-Z][a-zA-Z0-9]*   { printf("Valid variable: %s\n", yytext); }
+.                       { printf("Invalid variable\n"); }
 %%
+
 int main() {
-    printf("Enter variable names (Ctrl+D to exit):\n");
     yylex();
     return 0;
 }
 
-int yywrap() {
-    return 1;
-}
+???????????????????????????6. Write a LEX Program to convert the substring abc to ABC from the given input string
 
+>>>>>>>>>>>>>>>>>>>>>>>>>>LEX Program:
 
-4. Convert Substring abc to ABC
-
+lex
+Copy code
 %{
-#include<stdio.h>
+#include <stdio.h>
+#include <string.h>
 %}
 
 %%
 abc     { printf("ABC"); }
-.       { printf("%s", yytext); }
-\n      { printf("\n"); }
+.       { putchar(yytext[0]); }
 %%
+
 int main() {
-    printf("Enter a string (Ctrl+D to exit):\n");
     yylex();
     return 0;
 }
 
-int yywrap() {
-    return 1;
-}
 
-
-5. Recognize a Valid Arithmetic Expression
-
-%{
-#include<stdio.h>
-%}
-
-%%
-[0-9]+          { printf("Number: %s\n", yytext); }
-"+"|"-"|"*"|"/" { printf("Operator: %s\n", yytext); }
-"("             { printf("Left Parenthesis\n"); }
-")"             { printf("Right Parenthesis\n"); }
-[ \t\n]         { /* Ignore whitespace */ }
-.               { printf("Invalid Character: %s\n", yytext); }
-%%
-int main() {
-    printf("Enter an arithmetic expression:\n");
-    yylex();
-    return 0;
-}
-
-int yywrap() {
-    return 1;
-}
-
-
-6. Symbol Table in C
-
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
-
-struct SymbolTable {
-    char name[50];
-    char type[20];
-    int size;
-} symbols[100];
-
-int count = 0;
-
-void insert(char *name, char *type, int size) {
-    strcpy(symbols[count].name, name);
-    strcpy(symbols[count].type, type);
-    symbols[count].size = size;
-    count++;
-}
-
-void display() {
-    printf("Name\tType\tSize\n");
-    for (int i = 0; i < count; i++) {
-        printf("%s\t%s\t%d\n", symbols[i].name, symbols[i].type, symbols[i].size);
-    }
-}
-
-int main() {
-    insert("x", "int", 4);
-    insert("y", "float", 4);
-    insert("arr", "int[10]", 40);
-
-    printf("Symbol Table:\n");
-    display();
-    return 0;
-}
-7. Implement NFAs Recognizing Identifiers, Constants, and Operators
-
-This requires creating an NFA simulation in C:
-
+???????????????????????????????????????????/ 7. C Program for NFA Simulation
+>>>>>>>>>>>>>>>>>>>>>>>>>>c
+Copy code
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
-void checkNFA(char *str) {
-    int i = 0, state = 0;
-
-    while (str[i] != '\0') {
-        switch (state) {
-            case 0:
-                if (isalpha(str[i]))
-                    state = 1;  // Identifier
-                else if (isdigit(str[i]))
-                    state = 2;  // Constant
-                else if (str[i] == '+' || str[i] == '-' || str[i] == '*' || str[i] == '/')
-                    state = 3;  // Operator
-                else
-                    state = -1;  // Invalid
-                break;
-
-            case 1:
-                if (isalnum(str[i]))
-                    state = 1;  // Stay as identifier
-                else
-                    state = -1;  // Invalid
-                break;
-
-            case 2:
-                if (isdigit(str[i]))
-                    state = 2;  // Stay as constant
-                else
-                    state = -1;  // Invalid
-                break;
-
-            case 3:
-                state = -1;  // Operators are single character
-                break;
-
-            default:
-                printf("Invalid input: %s\n", str);
-                return;
+// Function to simulate NFA for Identifiers
+int is_identifier(char *str) {
+    // The first character must be a letter or underscore
+    if (isalpha(str[0]) || str[0] == '_') {
+        // Subsequent characters must be alphanumeric or underscores
+        for (int i = 1; str[i] != '\0'; i++) {
+            if (!isalnum(str[i]) && str[i] != '_') {
+                return 0; // Invalid identifier
+            }
         }
-        i++;
+        return 1; // Valid identifier
     }
+    return 0; // Invalid identifier
+}
 
-    if (state == 1)
-        printf("Valid Identifier: %s\n", str);
-    else if (state == 2)
-        printf("Valid Constant: %s\n", str);
-    else if (state == 3)
-        printf("Valid Operator: %s\n", str);
-    else
-        printf("Invalid input: %s\n", str);
+// Function to simulate NFA for Constants (Numbers)
+int is_constant(char *str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (!isdigit(str[i])) {
+            return 0; // Invalid constant
+        }
+    }
+    return 1; // Valid constant
+}
+
+// Function to simulate NFA for Operators
+int is_operator(char *str) {
+    // Valid operators are +, -, *, /
+    if (strlen(str) == 1 && (str[0] == '+' || str[0] == '-' || str[0] == '*' || str[0] == '/')) {
+        return 1; // Valid operator
+    }
+    return 0; // Invalid operator
 }
 
 int main() {
     char input[100];
-    printf("Enter a string: ");
-    scanf("%s", input);
-    checkNFA(input);
+
+    printf("Enter a string (identifier, constant, or operator): ");
+    scanf("%s", input); // Read input string
+
+    // Check if the input is a valid identifier
+    if (is_identifier(input)) {
+        printf("Valid Identifier: %s\n", input);
+    }
+    // Check if the input is a valid constant (integer)
+    else if (is_constant(input)) {
+        printf("Valid Constant: %s\n", input);
+    }
+    // Check if the input is a valid operator
+    else if (is_operator(input)) {
+        printf("Valid Operator: %s\n", input);
+    }
+    else {
+        printf("Invalid input\n");
+    }
+
     return 0;
 }
 
+???????????????????????????????? 8. Implement DFAs for Identifiers, Constants, and Operators
 
-
-8. Implement DFAs for Identifiers, Constants, and Operators
-
-The DFA structure is similar to NFAs but requires strict deterministic transitions:
-
+>>>>>>>>>>>>>>>>>>>>>>>>>The DFA structure is similar to NFAs but requires strict deterministic transitions:
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
-void checkDFA(char *str) {
-    int i = 0, state = 0;
-
-    while (str[i] != '\0') {
-        switch (state) {
-            case 0:
-                if (isalpha(str[i]))
-                    state = 1;  // Identifier
-                else if (isdigit(str[i]))
-                    state = 2;  // Constant
-                else if (str[i] == '+' || str[i] == '-' || str[i] == '*' || str[i] == '/')
-                    state = 3;  // Operator
-                else
-                    state = -1;  // Invalid
-                break;
-
-            case 1:
-                if (isalnum(str[i]))
-                    state = 1;  // Stay as identifier
-                else
-                    state = -1;  // Invalid
-                break;
-
-            case 2:
-                if (isdigit(str[i]))
-                    state = 2;  // Stay as constant
-                else
-                    state = -1;  // Invalid
-                break;
-
-            case 3:
-                state = -1;  // Operators are single character
-                break;
-
-            default:
-                printf("Invalid input: %s\n", str);
-                return;
+// Function to simulate DFA for Identifiers
+int is_identifier(char *str) {
+    // The first character must be a letter or an underscore
+    if (isalpha(str[0]) || str[0] == '_') {
+        // Subsequent characters must be alphanumeric or underscores
+        for (int i = 1; str[i] != '\0'; i++) {
+            if (!isalnum(str[i]) && str[i] != '_') {
+                return 0; // Invalid identifier
+            }
         }
-        i++;
+        return 1; // Valid identifier
     }
+    return 0; // Invalid identifier
+}
 
-    if (state == 1)
-        printf("Valid Identifier: %s\n", str);
-    else if (state == 2)
-        printf("Valid Constant: %s\n", str);
-    else if (state == 3)
-        printf("Valid Operator: %s\n", str);
-    else
-        printf("Invalid input: %s\n", str);
+// Function to simulate DFA for Constants (Numbers)
+int is_constant(char *str) {
+    // A valid constant consists of only digits
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (!isdigit(str[i])) {
+            return 0; // Invalid constant
+        }
+    }
+    return 1; // Valid constant
+}
+
+// Function to simulate DFA for Operators
+int is_operator(char *str) {
+    // A valid operator is one of the characters: +, -, *, /
+    if (strlen(str) == 1 && (str[0] == '+' || str[0] == '-' || str[0] == '*' || str[0] == '/')) {
+        return 1; // Valid operator
+    }
+    return 0; // Invalid operator
 }
 
 int main() {
     char input[100];
-    printf("Enter a string: ");
-    scanf("%s", input);
-    checkDFA(input);
+
+    printf("Enter a string (identifier, constant, or operator): ");
+    scanf("%s", input); // Read input string
+
+    // Check if the input is a valid identifier using DFA
+    if (is_identifier(input)) {
+        printf("Valid Identifier: %s\n", input);
+    }
+    // Check if the input is a valid constant (integer) using DFA
+    else if (is_constant(input)) {
+        printf("Valid Constant: %s\n", input);
+    }
+    // Check if the input is a valid operator using DFA
+    else if (is_operator(input)) {
+        printf("Valid Operator: %s\n", input);
+    }
+    else {
+        printf("Invalid input\n");
+    }
+
     return 0;
 }
 
 
 ---
 
-9. Code Optimization Using Constant Folding
+?????????????????????????9. Code Optimization Using Constant Folding
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>c program:
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -367,9 +344,9 @@ int main() {
 
 ---
 
-10. 8086 Backend Simulation
+???????????????????????10. 8086 Backend Simulation
 
-This question requires translating three-address code into assembly-like instructions. Here's a basic implementation:
+>>>>>>>>>>>>>>>>>>>>>>>>>>>This question requires translating three-address code into assembly-like instructions. Here's a basic implementation:
 
 #include <stdio.h>
 #include <string.h>
@@ -400,290 +377,192 @@ int main() {
 }
 
 
-11. Simple Code Optimization
+????????????????????11. Write a lex program to find out total number of vowels, and consonants from the given input
+sting. 
 
-This program demonstrates constant folding and algebraic simplification (e.g., replacing x * 2 with x + x for strength reduction).
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>. LEX Program:
 
+lex
+Copy code
+%{
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+int vowels = 0, consonants = 0;
+%}
 
-void optimizeExpression(char *expr) {
-    char op;
-    int num1 = 0, num2 = 0, result = 0;
-    
-    if (sscanf(expr, "%d %c %d", &num1, &op, &num2) == 3) {
-        switch (op) {
-            case '+': result = num1 + num2; break;
-            case '-': result = num1 - num2; break;
-            case '*': result = num1 * num2; break;
-            case '/': if (num2 != 0) result = num1 / num2; else { printf("Error: Division by zero.\n"); return; } break;
-            default: printf("Unsupported operation.\n"); return;
-        }
-        printf("Optimized: %d\n", result);
-    } else {
-        printf("No optimization applicable: %s\n", expr);
-    }
-}
+%%
+[aeiouAEIOU] { vowels++; }
+[a-zA-Z]     { consonants++; }
+.            { /* Ignore non-alphabetic characters */ }
+\n           { return 0; }
+
+%%
 
 int main() {
-    char expr[100];
-    printf("Enter an expression (e.g., 2 + 3): ");
-    fgets(expr, 100, stdin);
-    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
-    optimizeExpression(expr);
+    yylex();
+    printf("Vowels: %d, Consonants: %d\n", vowels, consonants);
     return 0;
 }
 
-
 ---
 
-12. Three-Address Code Generation
-
-This program generates three-address code for simple arithmetic expressions.
-
+??????????????????????// 12. Write a program to implement to recognize a valid control structures syntax of C language using
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>..Corrected Version of the Lex Program:
+c
+Copy code
+%{
 #include <stdio.h>
-#include <string.h>
+%}
 
-void generateThreeAddressCode(char *expr) {
-    char op, temp[5] = "t1";
-    char lhs[10], rhs1[10], rhs2[10];
+%option noyywrap
 
-    sscanf(expr, "%s = %s %c %s", lhs, rhs1, &op, rhs2);
-    printf("Three-Address Code:\n");
-    printf("%s = %s\n", temp, rhs1);      // Intermediate step
-    printf("%s %c= %s\n", temp, op, rhs2); // Final step
-    printf("%s = %s\n", lhs, temp);       // Assign to result
-}
+%%
+
+"for"    { printf("Valid 'for' loop syntax\n"); }
+"while"  { printf("Valid 'while' loop syntax\n"); }
+[ \t\n]+ { /* Ignore spaces, tabs, and newlines */ }
+.        { printf("Invalid syntax\n"); }
+
+%%
 
 int main() {
-    char expr[100];
-    printf("Enter an expression (e.g., x = a + b): ");
-    fgets(expr, 100, stdin);
-    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
-    generateThreeAddressCode(expr);
+    printf("Enter a string:\n");
+    yylex();  // Lexical analysis
+    return 0;
+}
+??????????????????????????????????? 13. Recursive Descent Parser for Arithmetic Expressions
+
+>>>>>>>>>>>>>>>>>>>> Yacc File (expr.y)
+c
+Copy code
+%{
+#include <stdio.h>
+#include <stdlib.h>
+
+// AST node structure
+typedef struct ASTNode {
+    int type;  // 0: number, 1: operator
+    union {
+        int num;            // number value
+        struct {
+            struct ASTNode *left;
+            struct ASTNode *right;
+            char op;
+        };
+    };
+} ASTNode;
+
+// Create new AST node
+ASTNode* new_node(int type, int num, char op, ASTNode* left, ASTNode* right) {
+    ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
+    node->type = type;
+    if (type == 0) {
+        node->num = num;
+    } else {
+        node->op = op;
+        node->left = left;
+        node->right = right;
+    }
+    return node;
+}
+
+// Print AST
+void print_ast(ASTNode* root) {
+    if (root->type == 0) {
+        printf("%d", root->num);
+    } else {
+        printf("(");
+        print_ast(root->left);
+        printf(" %c ", root->op);
+        print_ast(root->right);
+        printf(")");
+    }
+}
+
+%}
+
+%token <num> NUMBER
+%token PLUS MINUS TIMES DIVIDE LPAREN RPAREN
+
+%%
+
+expr:
+    term                        { $$ = $1; }
+    | expr PLUS term            { $$ = new_node(1, 0, '+', $1, $3); }
+    | expr MINUS term           { $$ = new_node(1, 0, '-', $1, $3); }
+    ;
+
+term:
+    factor                      { $$ = $1; }
+    | term TIMES factor         { $$ = new_node(1, 0, '*', $1, $3); }
+    | term DIVIDE factor        { $$ = new_node(1, 0, '/', $1, $3); }
+    ;
+
+factor:
+    NUMBER                      { $$ = new_node(0, $1, 0, NULL, NULL); }
+    | LPAREN expr RPAREN        { $$ = $2; }
+    ;
+
+%%
+
+int yyerror(char *s) {
+    fprintf(stderr, "Error: %s\n", s);
     return 0;
 }
 
-
----
-
-13. Recursive Descent Parser for Arithmetic Expressions
-
-This program parses arithmetic expressions like a + b * c and validates their syntax.
-
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-
-char *input;
-int i = 0;
-
-// Function prototypes
-void E(); // Expression
-void T(); // Term
-void F(); // Factor
-
-void match(char token) {
-    if (input[i] == token)
-        i++;
-    else {
-        printf("Error: Unexpected token '%c'\n", input[i]);
-        exit(1);
-    }
-}
-
-void E() {
-    T();
-    while (input[i] == '+' || input[i] == '-') {
-        match(input[i]);
-        T();
-    }
-}
-
-void T() {
-    F();
-    while (input[i] == '*' || input[i] == '/') {
-        match(input[i]);
-        F();
-    }
-}
-
-void F() {
-    if (isalnum(input[i])) {
-        i++; // Match a variable or number
-    } else if (input[i] == '(') {
-        match('(');
-        E();
-        match(')');
-    } else {
-        printf("Error: Unexpected token '%c'\n", input[i]);
-        exit(1);
-    }
-}
-
 int main() {
-    input = (char *)malloc(100);
     printf("Enter an expression: ");
-    scanf("%s", input);
-
-    E();
-    if (input[i] == '\0')
-        printf("Expression is valid.\n");
-    else
-        printf("Error: Unexpected input '%c'\n", input[i]);
-
-    free(input);
+    yyparse();
     return 0;
 }
-
-
----
-
-14. Syntax Analysis Using YACC
-
-This requires YACC (or Bison) and Flex. Below is an example of syntax analysis for arithmetic expressions:
-
-File: calc.l (Lex file):
-
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Lex File (expr.l)
+c
+Copy code
 %{
 #include "y.tab.h"
 %}
 
 %%
 
-[0-9]+    { yylval = atoi(yytext); return NUMBER; }
-[+\-*/()] { return yytext[0]; }
-\n        { return 0; }
-[ \t]     { /* Ignore whitespaces */ }
-.         { printf("Unexpected token: %s\n", yytext); return 0; }
+[0-9]+        { yylval.num = atoi(yytext); return NUMBER; }
+"+"           { return PLUS; }
+"-"           { return MINUS; }
+"*"           { return TIMES; }
+"/"           { return DIVIDE; }
+"("           { return LPAREN; }
+")"           { return RPAREN; }
+[ \t\n]+      { /* Ignore whitespace */ }
+.             { return 0; }
 
 %%
 
-File: calc.y (YACC file):
-
-%{
-#include <stdio.h>
-#include <stdlib.h>
-%}
-
-%token NUMBER
-
-%%
-expr : expr '+' term   { printf("Add\n"); }
-     | expr '-' term   { printf("Subtract\n"); }
-     | term            { /* Nothing */ }
-     ;
-
-term : term '*' factor { printf("Multiply\n"); }
-     | term '/' factor { printf("Divide\n"); }
-     | factor          { /* Nothing */ }
-     ;
-
-factor : '(' expr ')'  { /* Nothing */ }
-       | NUMBER        { printf("Number: %d\n", $1); }
-       ;
-
-%%
-int main() {
-    yyparse();
-    return 0;
+int yywrap() {
+    return 1;
 }
-
-int yyerror(char *s) {
-    printf("Error: %s\n", s);
-    return 0;
-}
-
-Compilation and Execution:
-
-bison -d calc.y
-flex calc.l
-gcc y.tab.c lex.yy.c -o calc -lfl
-./calc
-
 
 ---
 
-15. Intermediate Code Generation
+??????????????????? 14. Write a program to implement to recognize a valid control structures syntax of C language using
+ifelse, if-else-if and switch-case.
 
-This program uses a three-address code-like format for intermediate code generation.
+>>>>>>>>>>>>>>>>>>. LEX Program:
 
-#include <stdio.h>
-#include <string.h>
-
-void generateIntermediateCode(char *expr) {
-    char op, temp[5] = "t1";
-    char lhs[10], rhs1[10], rhs2[10];
-
-    sscanf(expr, "%s = %s %c %s", lhs, rhs1, &op, rhs2);
-    printf("Intermediate Code:\n");
-    printf("%s = %s %c %s\n", temp, rhs1, op, rhs2);
-    printf("%s = %s\n", lhs, temp);
-}
-
-int main() {
-    char expr[100];
-    printf("Enter an expression (e.g., x = a + b): ");
-    fgets(expr, 100, stdin);
-    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
-    generateIntermediateCode(expr);
-    return 0;
-}
-
-
----
-
-16. Backend Code Generation
-
-This generates assembly instructions from an expression.
-
-#include <stdio.h>
-#include <string.h>
-
-void backendCodeGeneration(char *expr) {
-    char lhs[10], rhs1[10], rhs2[10], op;
-
-    sscanf(expr, "%s = %s %c %s", lhs, rhs1, &op, rhs2);
-    printf("Assembly Code:\n");
-    printf("MOV AX, %s\n", rhs1);
-    if (op == '+')
-        printf("ADD AX, %s\n", rhs2);
-    else if (op == '-')
-        printf("SUB AX, %s\n", rhs2);
-    else if (op == '*')
-        printf("MUL %s\n", rhs2);
-    else if (op == '/')
-        printf("DIV %s\n", rhs2);
-    printf("MOV %s, AX\n", lhs);
-}
-
-int main() {
-    char expr[100];
-    printf("Enter an expression (e.g., x = a + b): ");
-    fgets(expr, 100, stdin);
-    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
-    backendCodeGeneration(expr);
-    return 0;
-}
-
-17. Lexical Analyzer using LEX
-
-A lexical analyzer that tokenizes identifiers, numbers, and operators.
-
-File: lexical.l
-
+lex
+Copy code
 %{
-#include<stdio.h>
+#include <stdio.h>
 %}
 
+IF      "if"
+ELSE    "else"
+SWITCH  "switch"
+CASE    "case"
 %%
-[a-zA-Z][a-zA-Z0-9]*    { printf("Identifier: %s\n", yytext); }
-[0-9]+                  { printf("Number: %s\n", yytext); }
-[+\-*/=()]              { printf("Operator: %s\n", yytext); }
-[ \t\n]                 { /* Ignore whitespaces */ }
-.                       { printf("Unknown symbol: %s\n", yytext); }
+
+{IF}    { printf("Valid 'if' statement\n"); }
+{ELSE}  { printf("Valid 'else' statement\n"); }
+{SWITCH}{ printf("Valid 'switch' statement\n"); }
+{CASE}  { printf("Valid 'case' statement\n"); }
+.       { printf("Invalid syntax\n"); }
 %%
 
 int main() {
@@ -691,146 +570,200 @@ int main() {
     return 0;
 }
 
-int yywrap() {
+---
+
+?????????????????? 15.Write a program to Implement any one storage allocation strategies 
+
+>>>>>>>>>>>> C program: 
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *x = (int *)malloc(sizeof(int));
+    *x = 10;
+    printf("Allocated value: %d\n", *x);
+    free(x);
+    return 0;
+}
+
+
+---
+
+???????????????????? 16. Write a program to Implement type checking. 
+>>>>>>>>>>>>>>>>>>>>> c program:
+
+#include <stdio.h>
+#include <ctype.h>
+
+int is_integer(char *str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (!isdigit(str[i])) return 0;
+    }
     return 1;
 }
 
-Compilation and Execution:
-
-lex lexical.l
-gcc lex.yy.c -o lexical -ll
-./lexical
-
-
----
-
-18. Predictive Parsing Table
-
-A simple predictive parser implementation. This requires manual parsing table construction for grammar rules.
-
-Example Code (For Grammar):
-
-#include <stdio.h>
-#include <string.h>
-
-int parse(char *input) {
-    char stack[100] = "$E";
-    int top = 2, i = 0;
-
-    printf("Stack\tInput\tAction\n");
-    printf("%s\t%s\t\n", stack, input);
-
-    while (stack[top] != '$') {
-        if (stack[top] == input[i]) {
-            top--;
-            i++;
-        } else if (stack[top] == 'E') {
-            stack[top--] = '\0';
-            stack[++top] = 'T';
-            printf("%s\t%s\tPush T\n", stack, input + i);
-        } else {
-            printf("Syntax Error!\n");
-            return 0;
-        }
-    }
-    return (input[i] == '$') ? 1 : 0;
-}
-
 int main() {
-    char input[100];
-    printf("Enter input string: ");
-    scanf("%s", input);
-    strcat(input, "$");
-
-    if (parse(input))
-        printf("Input is valid.\n");
+    char str[100];
+    printf("Enter a value: ");
+    scanf("%s", str);
+    if (is_integer(str)) 
+        printf("Integer type\n");
     else
-        printf("Invalid input.\n");
+        printf("Not an integer\n");
+    return 0;
+}
+
+
+????????????????????????// 17. Write a program to Implement Simple Code Optimization Techniques using Strength reduction 
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> c program :
+
+#include <stdio.h>
+
+int main() {
+    int n, result = 0;
+    printf("Enter the number of iterations: ");
+    scanf("%d", &n);
+
+    printf("Optimized Code:\n");
+    for (int i = 0; i < n; i++) {
+        printf("i: %d, result: %d\n", i, result);
+        result += 2;  // Strength reduction: Use addition instead of multiplication
+    }
 
     return 0;
 }
 
 
+
 ---
 
-19. Implementation of Shift-Reduce Parser
+??????????????????????????? 18. Write a program to implement to implement the symbol table
 
-A simple shift-reduce parser for basic expressions.
+>>>>>>>>>>>>>>>C program: 
 
 #include <stdio.h>
 #include <string.h>
 
-void shiftReduceParser(char *input) {
-    char stack[100] = "$";
-    int top = 1, i = 0;
+#define MAX 10
 
-    printf("Stack\tInput\tAction\n");
-    while (input[i] != '\0') {
-        printf("%s\t%s\t", stack, input + i);
+typedef struct {
+    char name[50];
+    char type[10];
+} Symbol;
 
-        if (input[i] == 'i' && input[i + 1] == 'd') {
-            strcat(stack, "id");
-            i += 2;
-            printf("Shift id\n");
-        } else if (stack[top] == 'i' && stack[top - 1] == '$') {
-            stack[--top] = 'E';
-            printf("Reduce E -> id\n");
-        } else {
-            printf("Error!\n");
-            return;
-        }
+Symbol symbolTable[MAX];
+int count = 0;
+
+void insert(char *name, char *type) {
+    if (count < MAX) {
+        strcpy(symbolTable[count].name, name);
+        strcpy(symbolTable[count].type, type);
+        count++;
+        printf("Inserted: %s\n", name);
+    } else {
+        printf("Symbol table is full.\n");
     }
-    printf("Accept!\n");
+}
+
+void display() {
+    printf("\nName\tType\n");
+    for (int i = 0; i < count; i++) {
+        printf("%s\t%s\n", symbolTable[i].name, symbolTable[i].type);
+    }
 }
 
 int main() {
-    char input[100];
-    printf("Enter input string: ");
-    scanf("%s", input);
-
-    shiftReduceParser(input);
+    insert("x", "int");
+    insert("y", "float");
+    display();
     return 0;
 }
 
 
 ---
 
-20. Code for Operator Precedence Parsing
+???????????????????????/19. Write a program to Implement Simple Code Optimization Techniques using Algebraic
+transformation 
 
-A program that checks if a string follows the precedence grammar.
+c program :
 
 #include <stdio.h>
-#include <string.h>
 
-char precedenceTable[3][3] = {
-    {'>', '<', '<'},
-    {'>', '>', '<'},
-    {'>', '>', '>'}
-};
+void optimize_code(int x, int y) {
+    int result;
 
-int precedence(char symbol) {
-    switch (symbol) {
-        case '+': return 0;
-        case '*': return 1;
-        case 'i': return 2; // Operand
-    }
-    return -1;
-}
+    // Original code: Using x * 1, x + 0
+    result = x * 1 + y;   // Algebraic transformation: x * 1 is redundant
+    printf("Original Code: result = %d\n", result);
 
-void operatorPrecedenceParser(char *input) {
-    printf("Operator Precedence Parsing Table:\n");
-    printf("Input: %s\n", input);
-    // Implementation of parsing logic based on the precedenceTable
+    // Optimized code: Simplified using algebraic transformation
+    result = x + y;  // Simplified by removing x * 1 and x + 0
+    printf("Optimized Code: result = %d\n", result);
 }
 
 int main() {
-    char input[100];
-    printf("Enter input string: ");
-    scanf("%s", input);
-
-    operatorPrecedenceParser(input);
+    int x = 5, y = 3;
+    optimize_code(x, y);
     return 0;
 }
 
 
+
 ---
+
+?????????????????????????????? 20. Write a program to generate three address code using LEX and YACC
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.. LEX Program (lexer.l):
+lex
+Copy code
+%{
+#include <stdio.h>
+#include <stdlib.h>
+%}
+
+%%
+[0-9]+  { yylval = atoi(yytext); return NUM; }
+[+\-*/] { return OP; }
+[ \t\n] { /* Ignore whitespaces */ }
+.       { return yytext[0]; }
+%%
+
+int yywrap() { return 1; }
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.YACC Program (parser.y):
+yacc
+Copy code
+%{
+#include <stdio.h>
+#include <stdlib.h>
+
+int temp_var = 1;  // Counter for temporary variables
+
+%}
+
+%token NUM OP
+
+%%
+
+stmt: expr { printf("Result: temp%d = %d\n", temp_var-1, $1); }
+    ;
+
+expr: NUM      { printf("temp%d = %d\n", temp_var++, $1); }
+    | expr OP NUM {
+        printf("temp%d = temp%d %s %d\n", temp_var, temp_var-2, yytext, $3);
+        if (yytext[0] == '+') $1 = $1 + $3;
+        else if (yytext[0] == '-') $1 = $1 - $3;
+        else if (yytext[0] == '*') $1 = $1 * $3;
+        else $1 = $1 / $3;
+        temp_var++;
+    }
+    ;
+
+%%
+
+int main() {
+    printf("Enter an arithmetic expression: ");
+    yyparse();
+    return 0;
+}
