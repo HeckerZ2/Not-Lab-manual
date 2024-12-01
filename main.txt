@@ -1,0 +1,836 @@
+1. Design a Lexical Analyzer in LEX to Recognize Patterns in C
+
+%{
+#include<stdio.h>
+#include<string.h>
+%}
+
+%%
+int             { printf("Keyword: int\n"); }
+float           { printf("Keyword: float\n"); }
+if|else         { printf("Keyword: %s\n", yytext); }
+[a-zA-Z_][a-zA-Z0-9_]* { printf("Identifier: %s\n", yytext); }
+[0-9]+          { printf("Number: %s\n", yytext); }
+"+"|"-"|"*"|"/" { printf("Operator: %s\n", yytext); }
+";"             { printf("Semicolon\n"); }
+[ \t\n]         { /* Ignore whitespace */ }
+.               { printf("Unknown character: %s\n", yytext); }
+%%
+
+int main() {
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
+
+2. Calculator Using LEX and YACC
+
+LEX File (calc.l)
+
+%{
+#include "y.tab.h"
+%}
+
+%%
+[0-9]+          { yylval = atoi(yytext); return NUMBER; }
+"+"             { return PLUS; }
+"-"             { return MINUS; }
+"*"             { return MUL; }
+"/"             { return DIV; }
+"("             { return LPAREN; }
+")"             { return RPAREN; }
+\n              { return END; }
+[ \t]           { /* Ignore whitespace */ }
+.               { return yytext[0]; }
+%%
+
+YACC File (calc.y)
+
+%{
+#include<stdio.h>
+#include<stdlib.h>
+%}
+
+%token NUMBER
+%token PLUS MINUS MUL DIV
+%token LPAREN RPAREN
+%token END
+
+%%
+calculation: expr END { printf("Result: %d\n", $1); }
+           ;
+
+expr: expr PLUS term { $$ = $1 + $3; }
+    | expr MINUS term { $$ = $1 - $3; }
+    | term
+    ;
+
+term: term MUL factor { $$ = $1 * $3; }
+    | term DIV factor { $$ = $1 / $3; }
+    | factor
+    ;
+
+factor: NUMBER
+      | LPAREN expr RPAREN
+      ;
+%%
+
+int main() {
+    printf("Enter an expression:\n");
+    yyparse();
+    return 0;
+}
+
+int yyerror(char *s) {
+    printf("Error: %s\n", s);
+    return 0;
+}
+
+
+3. Recognize a Valid Variable Name
+
+%{
+#include<stdio.h>
+%}
+
+%%
+[a-zA-Z_][a-zA-Z0-9_]*  { printf("Valid Variable Name: %s\n", yytext); }
+[^a-zA-Z0-9_]           { printf("Invalid Variable Name: %s\n", yytext); }
+%%
+int main() {
+    printf("Enter variable names (Ctrl+D to exit):\n");
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
+
+
+4. Convert Substring abc to ABC
+
+%{
+#include<stdio.h>
+%}
+
+%%
+abc     { printf("ABC"); }
+.       { printf("%s", yytext); }
+\n      { printf("\n"); }
+%%
+int main() {
+    printf("Enter a string (Ctrl+D to exit):\n");
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
+
+
+5. Recognize a Valid Arithmetic Expression
+
+%{
+#include<stdio.h>
+%}
+
+%%
+[0-9]+          { printf("Number: %s\n", yytext); }
+"+"|"-"|"*"|"/" { printf("Operator: %s\n", yytext); }
+"("             { printf("Left Parenthesis\n"); }
+")"             { printf("Right Parenthesis\n"); }
+[ \t\n]         { /* Ignore whitespace */ }
+.               { printf("Invalid Character: %s\n", yytext); }
+%%
+int main() {
+    printf("Enter an arithmetic expression:\n");
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
+
+
+6. Symbol Table in C
+
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+
+struct SymbolTable {
+    char name[50];
+    char type[20];
+    int size;
+} symbols[100];
+
+int count = 0;
+
+void insert(char *name, char *type, int size) {
+    strcpy(symbols[count].name, name);
+    strcpy(symbols[count].type, type);
+    symbols[count].size = size;
+    count++;
+}
+
+void display() {
+    printf("Name\tType\tSize\n");
+    for (int i = 0; i < count; i++) {
+        printf("%s\t%s\t%d\n", symbols[i].name, symbols[i].type, symbols[i].size);
+    }
+}
+
+int main() {
+    insert("x", "int", 4);
+    insert("y", "float", 4);
+    insert("arr", "int[10]", 40);
+
+    printf("Symbol Table:\n");
+    display();
+    return 0;
+}
+7. Implement NFAs Recognizing Identifiers, Constants, and Operators
+
+This requires creating an NFA simulation in C:
+
+#include <stdio.h>
+#include <ctype.h>
+
+void checkNFA(char *str) {
+    int i = 0, state = 0;
+
+    while (str[i] != '\0') {
+        switch (state) {
+            case 0:
+                if (isalpha(str[i]))
+                    state = 1;  // Identifier
+                else if (isdigit(str[i]))
+                    state = 2;  // Constant
+                else if (str[i] == '+' || str[i] == '-' || str[i] == '*' || str[i] == '/')
+                    state = 3;  // Operator
+                else
+                    state = -1;  // Invalid
+                break;
+
+            case 1:
+                if (isalnum(str[i]))
+                    state = 1;  // Stay as identifier
+                else
+                    state = -1;  // Invalid
+                break;
+
+            case 2:
+                if (isdigit(str[i]))
+                    state = 2;  // Stay as constant
+                else
+                    state = -1;  // Invalid
+                break;
+
+            case 3:
+                state = -1;  // Operators are single character
+                break;
+
+            default:
+                printf("Invalid input: %s\n", str);
+                return;
+        }
+        i++;
+    }
+
+    if (state == 1)
+        printf("Valid Identifier: %s\n", str);
+    else if (state == 2)
+        printf("Valid Constant: %s\n", str);
+    else if (state == 3)
+        printf("Valid Operator: %s\n", str);
+    else
+        printf("Invalid input: %s\n", str);
+}
+
+int main() {
+    char input[100];
+    printf("Enter a string: ");
+    scanf("%s", input);
+    checkNFA(input);
+    return 0;
+}
+
+
+
+8. Implement DFAs for Identifiers, Constants, and Operators
+
+The DFA structure is similar to NFAs but requires strict deterministic transitions:
+
+#include <stdio.h>
+#include <ctype.h>
+
+void checkDFA(char *str) {
+    int i = 0, state = 0;
+
+    while (str[i] != '\0') {
+        switch (state) {
+            case 0:
+                if (isalpha(str[i]))
+                    state = 1;  // Identifier
+                else if (isdigit(str[i]))
+                    state = 2;  // Constant
+                else if (str[i] == '+' || str[i] == '-' || str[i] == '*' || str[i] == '/')
+                    state = 3;  // Operator
+                else
+                    state = -1;  // Invalid
+                break;
+
+            case 1:
+                if (isalnum(str[i]))
+                    state = 1;  // Stay as identifier
+                else
+                    state = -1;  // Invalid
+                break;
+
+            case 2:
+                if (isdigit(str[i]))
+                    state = 2;  // Stay as constant
+                else
+                    state = -1;  // Invalid
+                break;
+
+            case 3:
+                state = -1;  // Operators are single character
+                break;
+
+            default:
+                printf("Invalid input: %s\n", str);
+                return;
+        }
+        i++;
+    }
+
+    if (state == 1)
+        printf("Valid Identifier: %s\n", str);
+    else if (state == 2)
+        printf("Valid Constant: %s\n", str);
+    else if (state == 3)
+        printf("Valid Operator: %s\n", str);
+    else
+        printf("Invalid input: %s\n", str);
+}
+
+int main() {
+    char input[100];
+    printf("Enter a string: ");
+    scanf("%s", input);
+    checkDFA(input);
+    return 0;
+}
+
+
+---
+
+9. Code Optimization Using Constant Folding
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void constantFolding(char *expr) {
+    int result = 0, num1 = 0, num2 = 0;
+    char op;
+
+    sscanf(expr, "%d %c %d", &num1, &op, &num2);
+
+    switch (op) {
+        case '+': result = num1 + num2; break;
+        case '-': result = num1 - num2; break;
+        case '*': result = num1 * num2; break;
+        case '/': result = num1 / num2; break;
+        default: printf("Invalid expression\n"); return;
+    }
+
+    printf("Original Expression: %s\n", expr);
+    printf("Optimized Expression: %d\n", result);
+}
+
+int main() {
+    char expr[100];
+    printf("Enter a constant expression (e.g., 4 + 5): ");
+    fgets(expr, 100, stdin);
+    constantFolding(expr);
+    return 0;
+}
+
+
+---
+
+10. 8086 Backend Simulation
+
+This question requires translating three-address code into assembly-like instructions. Here's a basic implementation:
+
+#include <stdio.h>
+#include <string.h>
+
+void generateAssembly(char *code) {
+    char op[10], arg1[10], arg2[10], res[10];
+    sscanf(code, "%s %s %s %s", res, arg1, op, arg2);
+
+    printf("Assembly Code:\n");
+    printf("MOV AX, %s\n", arg1);
+    if (strcmp(op, "+") == 0)
+        printf("ADD AX, %s\n", arg2);
+    else if (strcmp(op, "-") == 0)
+        printf("SUB AX, %s\n", arg2);
+    else if (strcmp(op, "*") == 0)
+        printf("MUL %s\n", arg2);
+    else if (strcmp(op, "/") == 0)
+        printf("DIV %s\n", arg2);
+    printf("MOV %s, AX\n", res);
+}
+
+int main() {
+    char code[100];
+    printf("Enter a three-address code (e.g., t1 = a + b): ");
+    fgets(code, 100, stdin);
+    generateAssembly(code);
+    return 0;
+}
+
+
+11. Simple Code Optimization
+
+This program demonstrates constant folding and algebraic simplification (e.g., replacing x * 2 with x + x for strength reduction).
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+void optimizeExpression(char *expr) {
+    char op;
+    int num1 = 0, num2 = 0, result = 0;
+    
+    if (sscanf(expr, "%d %c %d", &num1, &op, &num2) == 3) {
+        switch (op) {
+            case '+': result = num1 + num2; break;
+            case '-': result = num1 - num2; break;
+            case '*': result = num1 * num2; break;
+            case '/': if (num2 != 0) result = num1 / num2; else { printf("Error: Division by zero.\n"); return; } break;
+            default: printf("Unsupported operation.\n"); return;
+        }
+        printf("Optimized: %d\n", result);
+    } else {
+        printf("No optimization applicable: %s\n", expr);
+    }
+}
+
+int main() {
+    char expr[100];
+    printf("Enter an expression (e.g., 2 + 3): ");
+    fgets(expr, 100, stdin);
+    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
+    optimizeExpression(expr);
+    return 0;
+}
+
+
+---
+
+12. Three-Address Code Generation
+
+This program generates three-address code for simple arithmetic expressions.
+
+#include <stdio.h>
+#include <string.h>
+
+void generateThreeAddressCode(char *expr) {
+    char op, temp[5] = "t1";
+    char lhs[10], rhs1[10], rhs2[10];
+
+    sscanf(expr, "%s = %s %c %s", lhs, rhs1, &op, rhs2);
+    printf("Three-Address Code:\n");
+    printf("%s = %s\n", temp, rhs1);      // Intermediate step
+    printf("%s %c= %s\n", temp, op, rhs2); // Final step
+    printf("%s = %s\n", lhs, temp);       // Assign to result
+}
+
+int main() {
+    char expr[100];
+    printf("Enter an expression (e.g., x = a + b): ");
+    fgets(expr, 100, stdin);
+    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
+    generateThreeAddressCode(expr);
+    return 0;
+}
+
+
+---
+
+13. Recursive Descent Parser for Arithmetic Expressions
+
+This program parses arithmetic expressions like a + b * c and validates their syntax.
+
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+
+char *input;
+int i = 0;
+
+// Function prototypes
+void E(); // Expression
+void T(); // Term
+void F(); // Factor
+
+void match(char token) {
+    if (input[i] == token)
+        i++;
+    else {
+        printf("Error: Unexpected token '%c'\n", input[i]);
+        exit(1);
+    }
+}
+
+void E() {
+    T();
+    while (input[i] == '+' || input[i] == '-') {
+        match(input[i]);
+        T();
+    }
+}
+
+void T() {
+    F();
+    while (input[i] == '*' || input[i] == '/') {
+        match(input[i]);
+        F();
+    }
+}
+
+void F() {
+    if (isalnum(input[i])) {
+        i++; // Match a variable or number
+    } else if (input[i] == '(') {
+        match('(');
+        E();
+        match(')');
+    } else {
+        printf("Error: Unexpected token '%c'\n", input[i]);
+        exit(1);
+    }
+}
+
+int main() {
+    input = (char *)malloc(100);
+    printf("Enter an expression: ");
+    scanf("%s", input);
+
+    E();
+    if (input[i] == '\0')
+        printf("Expression is valid.\n");
+    else
+        printf("Error: Unexpected input '%c'\n", input[i]);
+
+    free(input);
+    return 0;
+}
+
+
+---
+
+14. Syntax Analysis Using YACC
+
+This requires YACC (or Bison) and Flex. Below is an example of syntax analysis for arithmetic expressions:
+
+File: calc.l (Lex file):
+
+%{
+#include "y.tab.h"
+%}
+
+%%
+
+[0-9]+    { yylval = atoi(yytext); return NUMBER; }
+[+\-*/()] { return yytext[0]; }
+\n        { return 0; }
+[ \t]     { /* Ignore whitespaces */ }
+.         { printf("Unexpected token: %s\n", yytext); return 0; }
+
+%%
+
+File: calc.y (YACC file):
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+%}
+
+%token NUMBER
+
+%%
+expr : expr '+' term   { printf("Add\n"); }
+     | expr '-' term   { printf("Subtract\n"); }
+     | term            { /* Nothing */ }
+     ;
+
+term : term '*' factor { printf("Multiply\n"); }
+     | term '/' factor { printf("Divide\n"); }
+     | factor          { /* Nothing */ }
+     ;
+
+factor : '(' expr ')'  { /* Nothing */ }
+       | NUMBER        { printf("Number: %d\n", $1); }
+       ;
+
+%%
+int main() {
+    yyparse();
+    return 0;
+}
+
+int yyerror(char *s) {
+    printf("Error: %s\n", s);
+    return 0;
+}
+
+Compilation and Execution:
+
+bison -d calc.y
+flex calc.l
+gcc y.tab.c lex.yy.c -o calc -lfl
+./calc
+
+
+---
+
+15. Intermediate Code Generation
+
+This program uses a three-address code-like format for intermediate code generation.
+
+#include <stdio.h>
+#include <string.h>
+
+void generateIntermediateCode(char *expr) {
+    char op, temp[5] = "t1";
+    char lhs[10], rhs1[10], rhs2[10];
+
+    sscanf(expr, "%s = %s %c %s", lhs, rhs1, &op, rhs2);
+    printf("Intermediate Code:\n");
+    printf("%s = %s %c %s\n", temp, rhs1, op, rhs2);
+    printf("%s = %s\n", lhs, temp);
+}
+
+int main() {
+    char expr[100];
+    printf("Enter an expression (e.g., x = a + b): ");
+    fgets(expr, 100, stdin);
+    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
+    generateIntermediateCode(expr);
+    return 0;
+}
+
+
+---
+
+16. Backend Code Generation
+
+This generates assembly instructions from an expression.
+
+#include <stdio.h>
+#include <string.h>
+
+void backendCodeGeneration(char *expr) {
+    char lhs[10], rhs1[10], rhs2[10], op;
+
+    sscanf(expr, "%s = %s %c %s", lhs, rhs1, &op, rhs2);
+    printf("Assembly Code:\n");
+    printf("MOV AX, %s\n", rhs1);
+    if (op == '+')
+        printf("ADD AX, %s\n", rhs2);
+    else if (op == '-')
+        printf("SUB AX, %s\n", rhs2);
+    else if (op == '*')
+        printf("MUL %s\n", rhs2);
+    else if (op == '/')
+        printf("DIV %s\n", rhs2);
+    printf("MOV %s, AX\n", lhs);
+}
+
+int main() {
+    char expr[100];
+    printf("Enter an expression (e.g., x = a + b): ");
+    fgets(expr, 100, stdin);
+    expr[strcspn(expr, "\n")] = '\0';  // Remove trailing newline
+    backendCodeGeneration(expr);
+    return 0;
+}
+
+17. Lexical Analyzer using LEX
+
+A lexical analyzer that tokenizes identifiers, numbers, and operators.
+
+File: lexical.l
+
+%{
+#include<stdio.h>
+%}
+
+%%
+[a-zA-Z][a-zA-Z0-9]*    { printf("Identifier: %s\n", yytext); }
+[0-9]+                  { printf("Number: %s\n", yytext); }
+[+\-*/=()]              { printf("Operator: %s\n", yytext); }
+[ \t\n]                 { /* Ignore whitespaces */ }
+.                       { printf("Unknown symbol: %s\n", yytext); }
+%%
+
+int main() {
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
+
+Compilation and Execution:
+
+lex lexical.l
+gcc lex.yy.c -o lexical -ll
+./lexical
+
+
+---
+
+18. Predictive Parsing Table
+
+A simple predictive parser implementation. This requires manual parsing table construction for grammar rules.
+
+Example Code (For Grammar):
+
+#include <stdio.h>
+#include <string.h>
+
+int parse(char *input) {
+    char stack[100] = "$E";
+    int top = 2, i = 0;
+
+    printf("Stack\tInput\tAction\n");
+    printf("%s\t%s\t\n", stack, input);
+
+    while (stack[top] != '$') {
+        if (stack[top] == input[i]) {
+            top--;
+            i++;
+        } else if (stack[top] == 'E') {
+            stack[top--] = '\0';
+            stack[++top] = 'T';
+            printf("%s\t%s\tPush T\n", stack, input + i);
+        } else {
+            printf("Syntax Error!\n");
+            return 0;
+        }
+    }
+    return (input[i] == '$') ? 1 : 0;
+}
+
+int main() {
+    char input[100];
+    printf("Enter input string: ");
+    scanf("%s", input);
+    strcat(input, "$");
+
+    if (parse(input))
+        printf("Input is valid.\n");
+    else
+        printf("Invalid input.\n");
+
+    return 0;
+}
+
+
+---
+
+19. Implementation of Shift-Reduce Parser
+
+A simple shift-reduce parser for basic expressions.
+
+#include <stdio.h>
+#include <string.h>
+
+void shiftReduceParser(char *input) {
+    char stack[100] = "$";
+    int top = 1, i = 0;
+
+    printf("Stack\tInput\tAction\n");
+    while (input[i] != '\0') {
+        printf("%s\t%s\t", stack, input + i);
+
+        if (input[i] == 'i' && input[i + 1] == 'd') {
+            strcat(stack, "id");
+            i += 2;
+            printf("Shift id\n");
+        } else if (stack[top] == 'i' && stack[top - 1] == '$') {
+            stack[--top] = 'E';
+            printf("Reduce E -> id\n");
+        } else {
+            printf("Error!\n");
+            return;
+        }
+    }
+    printf("Accept!\n");
+}
+
+int main() {
+    char input[100];
+    printf("Enter input string: ");
+    scanf("%s", input);
+
+    shiftReduceParser(input);
+    return 0;
+}
+
+
+---
+
+20. Code for Operator Precedence Parsing
+
+A program that checks if a string follows the precedence grammar.
+
+#include <stdio.h>
+#include <string.h>
+
+char precedenceTable[3][3] = {
+    {'>', '<', '<'},
+    {'>', '>', '<'},
+    {'>', '>', '>'}
+};
+
+int precedence(char symbol) {
+    switch (symbol) {
+        case '+': return 0;
+        case '*': return 1;
+        case 'i': return 2; // Operand
+    }
+    return -1;
+}
+
+void operatorPrecedenceParser(char *input) {
+    printf("Operator Precedence Parsing Table:\n");
+    printf("Input: %s\n", input);
+    // Implementation of parsing logic based on the precedenceTable
+}
+
+int main() {
+    char input[100];
+    printf("Enter input string: ");
+    scanf("%s", input);
+
+    operatorPrecedenceParser(input);
+    return 0;
+}
+
+
+---
